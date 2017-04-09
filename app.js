@@ -14,7 +14,12 @@ app.use(passport.session());
 const user = {
   username: 'admin',
   password: 'pass',
+  role: 1,
   id: 1
+};
+
+const roleURIMap = {
+  1: ['/data']
 };
 
 passport.serializeUser((user, cb)=> {
@@ -41,7 +46,16 @@ function isLoggedIn(req, res, next) {
   if (req.isAuthenticated())
     return next();
 
-  res.send(401);
+  res.send(403);
+}
+
+function isAuthenticated(req, res, next) {
+  console.log(roleURIMap[req.user.role], req.url);
+  if(roleURIMap[req.user.role].indexOf(req.url) > -1) {
+    return next();
+  } else {
+    res.send(401);
+  }
 }
 
 app.all('/users', isLoggedIn);
@@ -56,4 +70,10 @@ app.post('/login', passport.authenticate('local'), (req, res)=> {
 
 app.listen(3000, ()=> {
   console.log("Server Started");
+});
+
+app.all('/data', isLoggedIn);
+app.all('/data', isAuthenticated);
+app.get('/data', (req, res)=> {
+  res.send('机密数据')
 });
